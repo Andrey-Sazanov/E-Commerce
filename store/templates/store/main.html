@@ -8,7 +8,7 @@
 
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-	
+	<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
 
 	<script type="text/javascript">
 		var user = '{{request.user}}'
@@ -202,5 +202,71 @@ h1,h2,h3,h4,h5,h6{
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
 	<script type="text/javascript" src="{% static 'js/cart.js' %}"></script>
+
+	<script>
+		let updateBtns = document.getElementsByClassName('update-cart')
+
+for (i = 0; i < updateBtns.length; i++) {
+	updateBtns[i].addEventListener('click', function(){
+		let productId = this.dataset.product
+		let action = this.dataset.action
+		console.log('productId:', productId, 'Action:', action)
+		console.log('USER:', user)
+
+		if (user == 'AnonymousUser'){
+			addCookieItem(productId, action)
+		}else{
+			updateUserOrder(productId, action)
+		}
+	})
+}
+
+function updateUserOrder(productId, action){
+	console.log('User is authenticated, sending data...')
+
+		let url = '/update_item/'
+
+		fetch(url, {
+			method:'POST',
+			headers:{
+				'Content-Type':'application/json',
+				'X-CSRFToken':csrftoken,
+			}, 
+			body:JSON.stringify({'productId':productId, 'action':action})
+		})
+		.then((response) => {
+		   return response.json();
+		})
+		.then((data) => {
+		    location.reload()
+		});
+}
+
+function addCookieItem(productId, action){
+	console.log('User is not authenticated')
+
+	if (action == 'add'){
+		if (cart[productId] == undefined){
+		cart[productId] = {'quantity':1}
+
+		}else{
+			cart[productId]['quantity'] += 1
+		}
+	}
+
+	if (action == 'remove'){
+		cart[productId]['quantity'] -= 1
+
+		if (cart[productId]['quantity'] <= 0){
+			console.log('Item should be deleted')
+			delete cart[productId];
+		}
+	}
+	console.log('CART:', cart)
+	document.cookie ='cart=' + JSON.stringify(cart) + ";domain=;path=/"
+	
+	location.reload()
+}
+	</script>
 </body>
 </html>
